@@ -12,7 +12,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-&h2+ej0l*v#-ji_hf9zlz
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost','192.168.173.33']
+ALLOWED_HOSTS = ['chatterly-chat-application.onrender.com' , '127.0.0.1', 'localhost','192.168.173.33' , 'chatterly.onrender.com']
 
 INSTALLED_APPS = [
     'daphne',
