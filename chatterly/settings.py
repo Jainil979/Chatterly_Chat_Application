@@ -1,3 +1,94 @@
+
+# ======================================
+# RENDER.COM PRODUCTION SETTINGS
+# ======================================
+import os
+import dj_database_url
+
+# Check if running on Render
+if 'RENDER' in os.environ:
+    print("✅ Running in Render production environment")
+    
+    # Production security
+    DEBUG = False
+    
+    # Update ALLOWED_HOSTS
+    ALLOWED_HOSTS = [
+        'chatterly.onrender.com',
+        '.onrender.com',
+        'localhost',
+        '127.0.0.1',
+    ]
+    
+    # Production CSRF settings
+    CSRF_TRUSTED_ORIGINS = [
+        'https://chatterly.onrender.com',
+        'https://*.onrender.com',
+    ]
+    
+    # Database - Use DATABASE_URL from environment
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+    
+    # Redis - Use REDIS_URL from environment
+    REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
+    
+    # Update cache configuration
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL + "/1",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_KWARGS": {"max_connections": 10},  # Limit connections
+            }
+        }
+    }
+    
+    # Update Channels layer
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+                "capacity": 1500,  # Increase for production
+                "expiry": 10,
+            },
+        },
+    }
+    
+    # Production security headers
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    
+    # Cookie settings for production (HTTPS)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'None'
+    CSRF_COOKIE_SAMESITE = 'None'
+    
+    # Static files with WhiteNoise
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    
+    # Email settings (already reading from .env)
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    
+    print("✅ Production settings applied")
+else:
+    print("⚡ Running in local development environment")
+    # Your local development settings remain unchanged
+
+
+
 from pathlib import Path
 import os
 from dotenv import load_dotenv
