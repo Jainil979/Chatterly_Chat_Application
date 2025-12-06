@@ -1,0 +1,138 @@
+# render.yaml
+# Complete deployment configuration for Chatterly Django Chat Application
+# Deploys: Web Service + Worker + PostgreSQL + Redis
+
+services:
+  # ======================================
+  # WEB SERVICE (Handles HTTP & WebSockets)
+  # ======================================
+  - type: web
+    name: chatterly-web
+    env: python
+    region: oregon  # Options: oregon, frankfurt, singapore, ohio
+    plan: free
+    branch: main
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      # Python Version
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      
+      # Django Settings
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: chatterly.onrender.com,.onrender.com,localhost,127.0.0.1
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://chatterly.onrender.com
+      
+      # Database (from PostgreSQL service below)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chatterly-db
+          property: connectionString
+      
+      # Redis (from Redis service below)
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: chatterly-redis
+          property: connectionString
+      
+      # Email Configuration (set these in Render dashboard after deployment)
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "true"
+      - key: EMAIL_HOST_USER
+        sync: false  # Set manually in dashboard
+      - key: EMAIL_HOST_PASSWORD
+        sync: false  # Set manually in dashboard
+      - key: DEFAULT_FROM_EMAIL
+        sync: false  # Set manually in dashboard
+    
+    # Build Commands
+    buildCommand: |
+      echo "🚀 Starting build process..."
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate
+      echo "✅ Build completed!"
+    
+    # Start Command (using Daphne for ASGI/WebSockets)
+    startCommand: daphne -b 0.0.0.0 -p $PORT chatterly.asgi:application
+
+  # ======================================
+  # BACKGROUND WORKER (Handles WebSocket messages)
+  # ======================================
+  - type: worker
+    name: chatterly-worker
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    envVars:
+      # Share environment variables from web service
+      - key: DATABASE_URL
+        fromService:
+          type: web
+          name: chatterly-web
+          property: DATABASE_URL
+      - key: REDIS_URL
+        fromService:
+          type: web
+          name: chatterly-web
+          property: REDIS_URL
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: chatterly-web
+          property: SECRET_KEY
+      - key: DEBUG
+        value: false
+      - key: ALLOWED_HOSTS
+        value: chatterly.onrender.com,.onrender.com,localhost,127.0.0.1
+    
+    # Build Commands (same as web service)
+    buildCommand: |
+      echo "🚀 Building worker..."
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      python manage.py migrate
+      echo "✅ Worker build completed!"
+    
+    # Start Command for Channels worker
+    startCommand: python manage.py runworker
+
+# ======================================
+# POSTGRESQL DATABASE
+# ======================================
+databases:
+  - name: chatterly-db
+    databaseName: chatterly
+    user: chatterly_user
+    region: oregon
+    plan: free
+    ipAllowList: []  # Allow all services to connect
+    # Database Initialization (optional)
+    # initCommands:
+    #   - CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+# ======================================
+# REDIS INSTANCE
+# ======================================
+redis:
+  - name: chatterly-redis
+    region: oregon
+    plan: free
+    maxmemoryPolicy: noeviction  # Don't evict keys when memory is full
+    ipAllowList: []  # Allow all services to connect
+    # Redis Configuration
+    # plan: free gives 25MB memory
+    # plan: starter gives 250MB
