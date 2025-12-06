@@ -14,6 +14,7 @@ if 'RENDER' in os.environ:
     
     # Update ALLOWED_HOSTS
     ALLOWED_HOSTS = [
+        'chatterly-chat-application.onrender.com',
         'chatterly.onrender.com',
         '.onrender.com',
         'localhost',
@@ -22,6 +23,7 @@ if 'RENDER' in os.environ:
     
     # Production CSRF settings
     CSRF_TRUSTED_ORIGINS = [
+        'chatterly-chat-application.onrender.com',
         'https://chatterly.onrender.com',
         'https://*.onrender.com',
     ]
