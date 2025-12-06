@@ -55,21 +55,13 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'accounts.middleware.RefreshOnExpiredMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-# Add custom middleware if needed (after Django's auth middleware)
-try:
-    from accounts.middleware import RefreshOnExpiredMiddleware
-    # Insert after AuthenticationMiddleware
-    auth_index = MIDDLEWARE.index('django.contrib.auth.middleware.AuthenticationMiddleware')
-    MIDDLEWARE.insert(auth_index + 1, 'accounts.middleware.RefreshOnExpiredMiddleware')
-except ImportError:
-    pass
 
 ROOT_URLCONF = 'chatterly.urls'
 
