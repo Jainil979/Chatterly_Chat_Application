@@ -170,7 +170,7 @@ Security is mission‑critical for a chat application.
 | ------------------ | -------- |
 | Authentication     | 95%      |
 | Chat APIs          | 85%      |
-| WebSocket handlers | 70%      |
+| WebSocket handlers | 85%      |
 
 ## Critical Paths
 
